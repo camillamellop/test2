@@ -22,10 +22,10 @@ export const metadata: Metadata = {
   description: "Plataforma de gerenciamento para DJs e produtores",
   manifest: "/manifest.json",
   themeColor: "#3b82f6",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  viewport: "width=device-width, initial-scale=1.0, viewport-fit=cover",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Conexão UNK",
   },
   formatDetection: {
@@ -41,14 +41,6 @@ export const metadata: Metadata = {
       { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
   },
-  other: {
-    "mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "default",
-    "apple-mobile-web-app-title": "Conexão UNK",
-    "msapplication-TileColor": "#3b82f6",
-    "msapplication-config": "/browserconfig.xml",
-  },
 }
 
 export default function RootLayout({
@@ -61,15 +53,14 @@ export default function RootLayout({
       <head>
         <meta name="application-name" content="Conexão UNK" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Conexão UNK" />
         <meta name="description" content="Plataforma de gerenciamento para DJs e produtores" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-config" content="/browserconfig.xml" />
         <meta name="msapplication-TileColor" content="#3b82f6" />
-        <meta name="msapplication-tap-highlight" content="no" />
         <meta name="theme-color" content="#3b82f6" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
@@ -79,17 +70,14 @@ export default function RootLayout({
         <link rel="mask-icon" href="/icon-192x192.png" color="#3b82f6" />
 
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:url" content="https://unk-platform.vercel.app" />
         <meta name="twitter:title" content="Conexão UNK" />
         <meta name="twitter:description" content="Plataforma de gerenciamento para DJs e produtores" />
-        <meta name="twitter:image" content="https://unk-platform.vercel.app/icon-192x192.png" />
-        <meta name="twitter:creator" content="@unk" />
+        <meta name="twitter:image" content="/icon-192x192.png" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Conexão UNK" />
         <meta property="og:description" content="Plataforma de gerenciamento para DJs e produtores" />
         <meta property="og:site_name" content="Conexão UNK" />
-        <meta property="og:url" content="https://unk-platform.vercel.app" />
-        <meta property="og:image" content="https://unk-platform.vercel.app/icon-192x192.png" />
+        <meta property="og:image" content="/icon-192x192.png" />
       </head>
       <body className={inter.className}>
         <AuthProvider>
