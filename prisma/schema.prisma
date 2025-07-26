@@ -1,0 +1,325 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de usuário/autenticação
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  password  String?
+  role      String   @default("dj") // "admin" | "dj"
+  bio       String?  // Biografia do usuário
+  avatar    String?  // URL da foto de perfil
+  portfolio String?  // Link do portfólio
+  phone     String?  // Telefone
+  location  String?  // Localização
+  pixKey    String?  // Chave PIX para pagamentos
+  socialMedia Json?  // Redes sociais (Instagram, TikTok, etc.)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  projects    Project[]
+  events      Event[]
+  transactions Transaction[]
+  assignedTransactions Transaction[] @relation("TransactionAssignment")
+  createdTransactions Transaction[] @relation("TransactionCreator")
+  fixedExpenses FixedExpense[]
+  debts       Debt[]
+  notes       Note[]
+  selfCareEntries SelfCareEntry[]
+  documents   Document[]
+  instagramPhotos InstagramPhoto[]
+  eventShares EventShare[]
+  notifications Notification[]
+  branding Branding?
+  createdBrandings Branding[] @relation("BrandingCreator")
+
+  @@map("users")
+}
+
+// Modelo de projetos
+model Project {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  category    String   // "branding" | "dj-music" | "instagram" | "other"
+  status      String   // "active" | "completed" | "paused"
+  progress    Int      @default(0)
+  deadline    DateTime?
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks      Task[]
+  documents  Document[]
+  instagramPhotos InstagramPhoto[]
+
+  @@map("projects")
+}
+
+// Modelo de tarefas
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  priority    String   // "low" | "medium" | "high"
+  dueDate     DateTime?
+  projectId   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}
+
+// Modelo de eventos/calendário
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  date        DateTime
+  time        String?
+  location    String?
+  type        String   // "show" | "meeting" | "rehearsal" | "other"
+  isShared    Boolean  @default(false) // Se o evento é compartilhado
+  createdBy   Int      // ID do usuário que criou o evento
+  userId      Int      // Proprietário do evento
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sharedWith EventShare[] // Eventos compartilhados
+  notifications Notification[] // Notificações relacionadas
+
+  @@map("events")
+}
+
+// Modelo de compartilhamento de eventos
+model EventShare {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    Int      // Usuário com quem foi compartilhado
+  status    String   @default("pending") // "pending" | "accepted" | "declined"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("event_shares")
+}
+
+// Modelo de notificações
+model Notification {
+  id          Int      @id @default(autoincrement())
+  title       String
+  message     String
+  type        String   // "event_share" | "event_reminder" | "system"
+  isRead      Boolean  @default(false)
+  userId      Int
+  eventId     Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}
+
+// Modelo de transações financeiras
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  type        String   // "income" | "expense"
+  amount      Decimal  @db.Decimal(10, 2)
+  description String
+  category    String
+  date        DateTime
+  receipt     String?  // URL do comprovante
+  userId      Int      // Proprietário da transação
+  assignedTo  Int?     // DJ para quem a receita foi atribuída (apenas para admin)
+  createdBy   Int      // Quem criou a transação
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedUser User? @relation("TransactionAssignment", fields: [assignedTo], references: [id], onDelete: SetNull)
+  creator User @relation("TransactionCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+// Modelo de despesas fixas
+model FixedExpense {
+  id          Int      @id @default(autoincrement())
+  name        String
+  amount      Decimal  @db.Decimal(10, 2)
+  category    String
+  dueDate     Int      // Dia do mês
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("fixed_expenses")
+}
+
+// Modelo de dívidas
+model Debt {
+  id          Int      @id @default(autoincrement())
+  name        String
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?
+  dueDate     DateTime?
+  paid        Boolean  @default(false)
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("debts")
+}
+
+// Modelo de notas
+model Note {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  content   String
+  type      String   @default("general") // "general" | "idea" | "reminder"
+  pinned    Boolean  @default(false)
+  date      DateTime @default(now())
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+// Modelo de auto-cuidado
+model SelfCareEntry {
+  id        Int      @id @default(autoincrement())
+  type      String   // "mood" | "sleep" | "activity" | "gratitude"
+  value     String   // valor específico do tipo
+  date      DateTime @default(now())
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("self_care_entries")
+}
+
+// Modelo de documentos
+model Document {
+  id         Int      @id @default(autoincrement())
+  title      String
+  description String?
+  fileName   String
+  fileUrl    String
+  fileType   String   // "pdf" | "doc" | "docx" | "image"
+  fileSize   Int
+  category   String   // "contract" | "proposal" | "invoice" | "other"
+  projectId  Int?
+  userId     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relacionamentos
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@map("documents")
+}
+
+// Modelo de fotos do Instagram
+model InstagramPhoto {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  folder      String   // "posts" | "stories" | "reels" | "highlights" | "other"
+  status      String   @default("draft") // "draft" | "scheduled" | "posted"
+  scheduledDate DateTime?
+  postedDate  DateTime?
+  projectId   Int?
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@map("instagram_photos")
+}
+
+// Modelo de branding pessoal
+model Branding {
+  id          Int      @id @default(autoincrement())
+  mission     String?
+  vision      String?
+  values      String?
+  voiceTone   String?
+  characteristics String?
+  targetAudience String?
+  userId      Int
+  createdBy   Int      // ID do usuário que criou o branding (admin)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creator User @relation("BrandingCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@unique([userId]) // Um branding por usuário
+  @@map("brandings")
+}
+
+// Modelo de configurações da empresa
+model CompanySettings {
+  id          Int      @id @default(autoincrement())
+  name        String   @default("Conexão UNK")
+  logo        String?  // URL do logo da empresa
+  description String?
+  website     String?
+  email       String?
+  phone       String?
+  address     String?
+  socialMedia Json?    // Redes sociais da empresa
+  theme       Json?    // Configurações de tema
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("company_settings")
+}
